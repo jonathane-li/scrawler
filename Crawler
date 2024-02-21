@@ -1,0 +1,29 @@
+package com.mavin;
+
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Crawler {
+
+    public List<String> generateURL(List<String> tickers){
+        List<String> tickerURL = new ArrayList<>();
+        String url = "https://www.google.com/search?q=";
+        for(String temp: tickers){
+            String tempURL = url + temp + " stock";
+            tickerURL.add(tempURL);
+        }
+        return tickerURL;
+
+    }
+
+    public String[] tickerInformation(String [] tickerSymbol){
+        try{
+            Document document = new Document().text();
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+}
