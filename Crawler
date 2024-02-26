@@ -1,5 +1,6 @@
-package com.mavin;
+package org.example;
 
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
@@ -7,23 +8,55 @@ import java.util.List;
 
 public class Crawler {
 
-    public List<String> generateURL(List<String> tickers){
-        List<String> tickerURL = new ArrayList<>();
+    private String[] tickerSymbol;
+
+    public Crawler(String[] tickerSymbol){
+        this.tickerSymbol = tickerSymbol;
+
+    }
+
+    public String[] generateURL(String[] ticker){
+
+        String[] tickerURL = new String[ticker.length];
         String url = "https://www.google.com/search?q=";
-        for(String temp: tickers){
-            String tempURL = url + temp + " stock";
-            tickerURL.add(tempURL);
+        for(int i = 0; i < ticker.length; i++){
+            String tempURL = url + ticker[i] + " stock";
+            tickerURL[i] = tempURL;
         }
         return tickerURL;
 
     }
 
-    public String[] tickerInformation(String [] tickerSymbol){
-        try{
-            Document document = new Document().text();
+    public String[] stockName(String [] stockURL) {
+        String [] tickerName = new String[stockURL.length];
+        Document document;
+        String query = "div.PZPZlf.ssJ7i.B5dxMb";
+        for (int i = 0; i < stockURL.length; i++) {
+            try{
+                document = Jsoup.connect(stockURL[i]).get();
+                String name = document.select(query).text();
+                tickerName[i] = name;
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
-        }catch (Exception e){
-            e.printStackTrace();
         }
+        return tickerName;
     }
+
+    public void both(){
+        String[] stockurl = generateURL(tickerSymbol);
+        String[] temp =  stockName(stockurl);
+
+        for(String t: temp){
+            System.out.println(t);
+        }
+
+
+
+    }
+
+
+
+
 }
