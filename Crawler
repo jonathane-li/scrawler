@@ -1,4 +1,5 @@
-package org.example;
+package com.mavin;
+
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -27,28 +28,43 @@ public class Crawler {
 
     }
 
-    public List<List<String>> stockInformation (String [] stockURL) { // Full Name, Price, Data, Type 
-        
+    public List<List<String>> stockInformation (String [] stockURL) { // Full Name, Price, Data, Type
+
         Document document;
+        List<List<String>> finalReturn = new ArrayList<>();
+        List<String> fullName = new ArrayList<>();
+        List<String> price = new ArrayList<>();
+
         String query = "div.PZPZlf.ssJ7i.B5dxMb";
+        String query1 = "span.IsqQVc.NprOob.wT3VGc";
         for (int i = 0; i < stockURL.length; i++) {
             try{
                 document = Jsoup.connect(stockURL[i]).get();
                 String name = document.select(query).text();
-                tickerName[i] = name;
+                document = Jsoup.connect(stockURL[i]).get();
+                String priceTemp = document.select(query1).text();
+
+                fullName.add(name);
+                price.add(priceTemp);
+
             }catch (Exception e){
                 e.printStackTrace();
             }
 
-        }
-        return tickerName;
+
+
     }
+    finalReturn.add(fullName);
+    finalReturn.add(price);
+    return finalReturn;
+    }
+
 
     public void both(){
         String[] stockurl = generateURL(tickerSymbol);
-        String[] temp =  stockName(stockurl);
+        List<List<String>> temp =  stockInformation(stockurl);
 
-        for(String t: temp){
+        for(List<String> t: temp){
             System.out.println(t);
         }
 
