@@ -27,8 +27,8 @@ public class Crawler {
 
     }
 
-    public String[] stockName(String [] stockURL) {
-        String [] tickerName = new String[stockURL.length];
+    public List<List<String>> stockInformation (String [] stockURL) { // Full Name, Price, Data, Type 
+        
         Document document;
         String query = "div.PZPZlf.ssJ7i.B5dxMb";
         for (int i = 0; i < stockURL.length; i++) {
