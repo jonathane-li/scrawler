@@ -4,14 +4,26 @@ package com.mavin;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Crawler {
+    String usernameSQL = "root";
+    String url = "jdbc:mysql://localhost:3306/stock";
+    String passwordSQL = "0302.Enzheng";
+    JDBC jdbc = new JDBC(url, usernameSQL, passwordSQL);
 
     private String[] tickerSymbol;
 
-    public Crawler(String[] tickerSymbol){
+
+    public Crawler(String[] tickerSymbol) throws SQLException {
         this.tickerSymbol = tickerSymbol;
 
     }
@@ -27,25 +39,38 @@ public class Crawler {
         return tickerURL;
 
     }
+    public List<List<String>> stockInformation (String [] stockURL) {
 
-    public List<List<String>> stockInformation (String [] stockURL) { // Full Name, Price, Data, Type
+        StringBuilder sb = new StringBuilder();
+
 
         Document document;
         List<List<String>> finalReturn = new ArrayList<>();
         List<String> fullName = new ArrayList<>();
         List<String> price = new ArrayList<>();
+        List<String> lowPrice = new ArrayList<>();
+        List<String> highPrice = new ArrayList<>();
 
-        String query = "div.PZPZlf.ssJ7i.B5dxMb";
-        String query1 = "span.IsqQVc.NprOob.wT3VGc";
+
+
+        String query = "div.PZPZlf.ssJ7i.B5dxMb"; //Full Name
+        String query1 = "span.IsqQVc.NprOob.wT3VGc";  //Price
+        String query2 = "div.PZPZlf[data-attrid=Low]"; //Low
+        String query3 = "div.PZPZlf[data-attrid=High]";; //High
         for (int i = 0; i < stockURL.length; i++) {
             try{
                 document = Jsoup.connect(stockURL[i]).get();
                 String name = document.select(query).text();
-                document = Jsoup.connect(stockURL[i]).get();
                 String priceTemp = document.select(query1).text();
+                String tempLow = document.select(query2).text();
+                String tempHigh = document.select(query3).text();
+                insertData(jdbc.connection,tickerSymbol[i], name, priceTemp, tempLow, tempHigh);
+
 
                 fullName.add(name);
                 price.add(priceTemp);
+                lowPrice.add(tempLow);
+                highPrice.add(tempHigh);
 
             }catch (Exception e){
                 e.printStackTrace();
@@ -56,9 +81,65 @@ public class Crawler {
     }
     finalReturn.add(fullName);
     finalReturn.add(price);
+    finalReturn.add(lowPrice);
+    finalReturn.add(highPrice);
     return finalReturn;
     }
 
+    private void insertData(Connection connection,String tickerS, String fullName, String price, String lowPrice, String highPrice) {
+        try {
+            String sql = "INSERT INTO stockTemp (symbol,name, type, date, ticker, high, low, price) VALUES (?,?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setString(1, tickerS);
+                preparedStatement.setString(2, fullName);
+                preparedStatement.setString(3, marketStatus());
+                preparedStatement.setDate(4, new java.sql.Date(getDate().getTime()));
+                preparedStatement.setString(5, "ticker_value");
+
+                if (!highPrice.isEmpty() && highPrice.matches("[-+]?\\d*\\.?\\d+")) {
+                    preparedStatement.setBigDecimal(6, new BigDecimal(highPrice));
+                } else {
+                    preparedStatement.setNull(6, java.sql.Types.DECIMAL);
+                }
+
+                if (!lowPrice.isEmpty() && lowPrice.matches("[-+]?\\d*\\.?\\d+")) {
+                    preparedStatement.setBigDecimal(7, new BigDecimal(lowPrice));
+                } else {
+                    preparedStatement.setNull(7, java.sql.Types.DECIMAL);
+                }
+
+                if (!price.isEmpty() && price.matches("[-+]?\\d*\\.?\\d+")) {
+                    preparedStatement.setBigDecimal(8, new BigDecimal(price));
+                } else {
+                    preparedStatement.setNull(8, java.sql.Types.DECIMAL);
+                }
+
+                preparedStatement.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private Date getDate(){
+        return new Date();
+
+    }
+
+    private static String marketStatus(){
+        LocalTime currentTime = LocalTime.now();
+        DayOfWeek currentDay = java.time.LocalDate.now().getDayOfWeek();
+
+        if(currentDay == DayOfWeek.SUNDAY || currentDay == DayOfWeek.SATURDAY || (currentTime.isAfter(LocalTime.of(16,0)) && currentTime.isBefore(LocalTime.of(6,0))) ){
+            return "closed";
+        }
+        else{
+            return "open";
+        }
+
+    }
 
     public void both(){
         String[] stockurl = generateURL(tickerSymbol);
