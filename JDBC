@@ -18,7 +18,7 @@ public class JDBC {
     public void createCustomTable(String[] columnNames, String[] columnTypes) {
         try {
             connectJDBC();
-            String tableName = "stockCrawl";
+            String tableName = "stockTemp";
             StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS " + tableName + "( ");
             for (int i = 0; i < columnNames.length; i++) {
                 sb.append(columnNames[i]).append(" ").append(columnTypes[i]);
@@ -26,7 +26,7 @@ public class JDBC {
                     sb.append(", ");
                 }
             }
-            sb.append(", PRIMARY KEY (name))");
+            sb.append(", PRIMARY KEY (symbol))");
 
             executeUpdateQuery(sb.toString());
         } catch (Exception e) {
@@ -38,7 +38,7 @@ public class JDBC {
 
     private void connectJDBC() throws SQLException {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver"); // Load the JDBC driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(url, username, password);
             statement = connection.createStatement();
         } catch (ClassNotFoundException | SQLException e) {
