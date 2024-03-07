@@ -15,18 +15,17 @@ public class JDBC {
         this.password = password;
         connectJDBC();
     }
-    public void createCustomTable(String[] columnNames, String[] columnTypes) {
+    public void createCustomTable(String[] columnNames, String[] columnTypes, String tableName) {
         try {
             connectJDBC();
-            String tableName = "stockTemp";
-            StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS " + tableName + "( ");
+            StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS " + tableName + " (");
             for (int i = 0; i < columnNames.length; i++) {
                 sb.append(columnNames[i]).append(" ").append(columnTypes[i]);
                 if (i < columnNames.length - 1) {
                     sb.append(", ");
                 }
             }
-            sb.append(", PRIMARY KEY (symbol))");
+            sb.append(", PRIMARY KEY(symbol))");
 
             executeUpdateQuery(sb.toString());
         } catch (Exception e) {
@@ -35,6 +34,7 @@ public class JDBC {
             closeConnection();
         }
     }
+
 
     private void connectJDBC() throws SQLException {
         try {
@@ -61,13 +61,12 @@ public class JDBC {
             connectJDBC();
         }
 
-        try{
+        try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(query);
-            statement.close();
+        }catch (SQLException e){
+            e.printStackTrace();
+            throw e;
         }finally {
-            if(statement != null){
-                statement.close();
-            }
             closeConnection();
         }
 
