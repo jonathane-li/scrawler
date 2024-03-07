@@ -17,7 +17,6 @@ import java.util.List;
 public class Crawler {
     String usernameSQL = "root";
     String url = "jdbc:mysql://localhost:3306/stock";
-    String passwordSQL = "0302.Enzheng";
     JDBC jdbc = new JDBC(url, usernameSQL, passwordSQL);
 
     private String[] tickerSymbol;
