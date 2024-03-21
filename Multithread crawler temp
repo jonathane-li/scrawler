@@ -1,0 +1,108 @@
+package com.mavin;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+public class Crawler1 implements Runnable {
+
+    private String ticker;
+    private String url = "jdbc:mysql://localhost:3306/stock";
+    private String usernameSQL = "root";
+    private String passwordSQL = "pass";
+    private JDBC jdbc = new JDBC(url, usernameSQL, passwordSQL);
+
+    public Crawler1(String ticker) throws SQLException {
+        this.ticker = ticker;
+    }
+
+    @Override
+    public void run() {
+        stockInformation();
+    }
+
+    public void stockInformation() {
+        String url = "https://www.google.com/search?q=" + this.ticker + " stock";
+
+        Document document;
+        List<String> stockInfo = new ArrayList<>();
+
+        String queryFullName = "div.PZPZlf.ssJ7i.B5dxMb"; // Full Name
+        String queryPrice = "span.IsqQVc.NprOob.wT3VGc";  // Price
+        String queryLowPrice = "div.PZPZlf[data-attrid=Low]"; // Low
+        String queryHighPrice = "div.PZPZlf[data-attrid=High]"; // High
+
+        try {
+            document = Jsoup.connect(url).get();
+            String fullName = document.select(queryFullName).text();
+            String price = document.select(queryPrice).text();
+            String lowPrice = document.select(queryLowPrice).text();
+            String highPrice = document.select(queryHighPrice).text();
+
+            insertData(ticker, fullName, price, lowPrice, highPrice);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void insertData(String ticker, String fullName, String price, String lowPrice, String highPrice) {
+        try (Connection connection = jdbc.getConnection()) {
+            String sql = "INSERT INTO stock (symbol, type, date, ticker, high, low, price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setString(1, ticker);
+                preparedStatement.setString(2, marketStatus());
+                preparedStatement.setDate(3, new java.sql.Date(getDate().getTime()));
+                preparedStatement.setString(4, "ticker_value");
+
+                if (!highPrice.isEmpty() && highPrice.matches("[-+]?\\d*\\.?\\d+")) {
+                    preparedStatement.setBigDecimal(5, new BigDecimal(highPrice));
+                } else {
+                    preparedStatement.setNull(5, java.sql.Types.DECIMAL);
+                }
+
+                if (!lowPrice.isEmpty() && lowPrice.matches("[-+]?\\d*\\.?\\d+")) {
+                    preparedStatement.setBigDecimal(6, new BigDecimal(lowPrice));
+                } else {
+                    preparedStatement.setNull(6, java.sql.Types.DECIMAL);
+                }
+
+                if (!price.isEmpty() && price.matches("[-+]?\\d*\\.?\\d+")) {
+                    preparedStatement.setBigDecimal(7, new BigDecimal(price));
+                } else {
+                    preparedStatement.setNull(7, java.sql.Types.DECIMAL);
+                }
+
+                preparedStatement.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Duplicate entries");
+        }
+    }
+
+    private Date getDate() {
+        return new Date();
+    }
+
+    private String marketStatus() {
+        LocalTime currentTime = LocalTime.now();
+        DayOfWeek currentDay = java.time.LocalDate.now().getDayOfWeek();
+
+        if (currentDay != DayOfWeek.SATURDAY && currentDay != DayOfWeek.SUNDAY &&
+                currentTime.isAfter(LocalTime.of(9, 30)) && currentTime.isBefore(LocalTime.of(16, 0))) {
+            return "open";
+        } else {
+            return "closed";
+        }
+    }
+}
