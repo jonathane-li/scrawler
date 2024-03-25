@@ -13,6 +13,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * This class implements a web crawler to retrieve stock information from Google search results.
+ * It retrieves the stock's full name, price, low price, and high price from Google.
+ * The retrieved information is then inserted into a MySQL database.
+ */
 public class Crawler1 implements Runnable {
 
     private String ticker;
@@ -21,6 +26,12 @@ public class Crawler1 implements Runnable {
     private String passwordSQL = "pass";
     private JDBC jdbc = new JDBC(url, usernameSQL, passwordSQL);
 
+    /**
+     * Constructs a new instance of the Crawler1 class with the specified stock ticker symbol.
+     *
+     * @param ticker the stock ticker symbol
+     * @throws SQLException if a database access error occurs
+     */
     public Crawler1(String ticker) throws SQLException {
         this.ticker = ticker;
     }
@@ -30,12 +41,16 @@ public class Crawler1 implements Runnable {
         stockInformation();
     }
 
+    /**
+     * Retrieves stock information from Google search results and inserts it into the database.
+     */
     public void stockInformation() {
         String url = "https://www.google.com/search?q=" + this.ticker + " stock";
 
         Document document;
         List<String> stockInfo = new ArrayList<>();
 
+        // CSS queries for retrieving specific information from Google search results
         String queryFullName = "div.PZPZlf.ssJ7i.B5dxMb"; // Full Name
         String queryPrice = "span.IsqQVc.NprOob.wT3VGc";  // Price
         String queryLowPrice = "div.PZPZlf[data-attrid=Low]"; // Low
@@ -55,6 +70,15 @@ public class Crawler1 implements Runnable {
         }
     }
 
+    /**
+     * Inserts stock information into the database.
+     *
+     * @param ticker    the stock ticker symbol
+     * @param fullName  the full name of the stock
+     * @param price     the current price of the stock
+     * @param lowPrice  the lowest price of the stock
+     * @param highPrice the highest price of the stock
+     */
     private void insertData(String ticker, String fullName, String price, String lowPrice, String highPrice) {
         try (Connection connection = jdbc.getConnection()) {
             String sql = "INSERT INTO stock (symbol, type, date, ticker, high, low, price) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -90,10 +114,20 @@ public class Crawler1 implements Runnable {
         }
     }
 
+    /**
+     * Retrieves the current date.
+     *
+     * @return the current date
+     */
     private Date getDate() {
         return new Date();
     }
 
+    /**
+     * Determines the market status based on the current day and time.
+     *
+     * @return "open" if the market is open, "closed" otherwise
+     */
     private String marketStatus() {
         LocalTime currentTime = LocalTime.now();
         DayOfWeek currentDay = java.time.LocalDate.now().getDayOfWeek();
